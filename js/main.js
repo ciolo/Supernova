@@ -132,8 +132,9 @@ function init() {
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
 	if(mobile()){
-        camera.position.set(0,270,450);
+        camera.position.set(0,270,1000);
         var lookingPosition = new THREE.Vector3(scene.position.x, scene.position.y + 150, scene.position.z);
+        gui.close();
     } else {
         camera.position.set(0,200,400);
         var lookingPosition = new THREE.Vector3(scene.position.x, scene.position.y, scene.position.z);
