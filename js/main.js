@@ -1,5 +1,5 @@
 // standard global variables
-var container, scene, camera, renderer, controls, stats;
+var container, scene, camera, renderer, controls, stats, gui;
 var time = 0;
 var speed = 0.7;
 var clock = new THREE.Clock();
@@ -39,7 +39,7 @@ function initGUI() {
     }; 
 
 
-	var gui = new dat.GUI();
+	gui = new dat.GUI();
 	parameters = 
 	{ c: 0.41, p: 1.4, bs: true, fs: false, nb: false, ab: true, mv: true, st_ps: false, color: "#b3afff"};
 
