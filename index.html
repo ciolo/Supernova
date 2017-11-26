@@ -1,0 +1,154 @@
+<html>
+<head>
+    <title>Supernova</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+
+
+<audio src="audio/supernovaCut.mp3" id="song">
+	<p>If you are reading this, it is because your browser does not support the audio element.</p>
+</audio>
+
+<body id="body">
+
+	<div id="WebGL" style="position: absolute; left:0px; top:0px"></div>
+
+	<script id="vertexShaderGlow" type="x-shader/x-vertex">
+		uniform vec3 viewVector;
+		uniform float c;
+		uniform float p;
+		varying float intensity;
+
+		void main() {
+			// first transform the normal into eye space and normalize the result
+			// now normalize the light's direction.
+			vec3 vNormal = normalize(normalMatrix*normal);
+			vec3 vNormel = normalize(normalMatrix*viewVector);
+			// The light is directional so the direction is constant for every vertex.
+			// Since these two are normalized the cosine is the dot product.
+			intensity = pow(c - dot(vNormal, vNormel), p);
+
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+		}
+	</script>
+
+	<script id="fragmentShaderGlow" type="x-shader/x-fragment">
+		uniform vec3 glowColor;
+		varying float intensity;
+		void main() {
+			vec3 glow = glowColor * intensity;
+			gl_FragColor = vec4(glow,1.0);
+		}
+	</script>
+
+	<script type="x-shader/x-vertex" id="vertexShaderStar">
+		uniform sampler2D noiseTexture;
+		uniform float noiseScale;
+		uniform sampler2D bumpTexture;
+		uniform float bumpSpeed;
+		uniform float bumpScale;
+		uniform float time;
+		varying vec2 vUv;
+		void main() 
+		{ 
+		    vUv = uv;
+			
+			vec2 uvTimeShift = vUv + vec2( 1.1, 1.9 ) * time * bumpSpeed;
+			vec4 noiseGeneratorTimeShift = texture2D( noiseTexture, uvTimeShift );
+			vec2 uvNoiseTimeShift = vUv + noiseScale * vec2( noiseGeneratorTimeShift.r, noiseGeneratorTimeShift.g );
+			// below, using uvTimeShift seems to result in more of a "rippling" effect
+			//   while uvNoiseTimeShift seems to result in more of a "shivering" effect
+			vec4 bumpData = texture2D(bumpTexture, uvNoiseTimeShift);
+			// move the position along the normal
+			float displacement = ( vUv.y > 0.999 || vUv.y < 0.001 ) ? 
+				bumpScale * (0.3 + 0.02 * sin(time)) :  
+				bumpScale * bumpData.r;
+		    vec3 newPosition = position + normal * displacement;
+			
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
+		}
+	</script>
+
+	<script type="x-shader/x-fragment" id="fragmentShaderStar">
+		uniform sampler2D baseTexture;
+		uniform float baseSpeed;
+		uniform float repeatS;
+		uniform float repeatT;
+		uniform sampler2D noiseTexture;
+		uniform float noiseScale;
+		uniform sampler2D blendTexture;
+		uniform float blendSpeed;
+		uniform float blendOffset;
+		uniform float time;
+		uniform float alpha;
+
+		varying vec2 vUv;
+		void main() 
+		{
+			vec2 uvTimeShift = vUv + vec2( -0.7, 1.5 ) * time * baseSpeed;	
+			vec4 noiseGeneratorTimeShift = texture2D( noiseTexture, uvTimeShift );
+			vec2 uvNoiseTimeShift = vUv + noiseScale * vec2( noiseGeneratorTimeShift.r, noiseGeneratorTimeShift.b );
+			vec4 baseColor = texture2D( baseTexture, uvNoiseTimeShift * vec2(repeatS, repeatT) );
+			vec2 uvTimeShift2 = vUv + vec2( 1.3, -1.7 ) * time * blendSpeed;	
+			vec4 noiseGeneratorTimeShift2 = texture2D( noiseTexture, uvTimeShift2 );
+			vec2 uvNoiseTimeShift2 = vUv + noiseScale * vec2( noiseGeneratorTimeShift2.g, noiseGeneratorTimeShift2.b );
+			vec4 blendColor = texture2D( blendTexture, uvNoiseTimeShift2 * vec2(repeatS, repeatT) ) - blendOffset * vec4(1.0, 1.0, 1.0, 1.0);
+			vec4 theColor = baseColor + blendColor;
+			theColor.a = alpha;
+			gl_FragColor = theColor;
+		}  
+	</script>
+
+	<script type="x-shader/x-vertex" id="vertexShaderParticle">
+		uniform vec3 customColor;
+		attribute float customSize;
+		attribute float theta;
+		attribute float phi;
+		attribute float timeOffset;
+
+		uniform float t;
+		uniform float radius;
+		varying vec3 vColor;
+		varying float r;
+		void main() {
+			vec3 p = position;
+			r = radius + max(0.0, t-timeOffset);
+			p.y = (radius + max(0.0, t-timeOffset)) * sin(theta) * cos(phi);
+			p.z = (radius + max(0.0, t-timeOffset)) * sin(theta) * sin(phi);
+			p.x = (radius + max(0.0, t-timeOffset)) * cos(theta);
+			vColor = customColor;
+			vec4 mvPosition = modelViewMatrix * vec4( p, 1.0 );
+			gl_PointSize = customSize * ( 30.0 / -mvPosition.z );
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
+		}
+	</script>
+
+	<script type="x-shader/x-fragment" id="fragmentShaderParticle">
+		uniform sampler2D texture;
+		varying vec3 vColor;
+		varying float r;
+		void main() {
+			gl_FragColor = vec4( vColor, 0.7 );
+			gl_FragColor = gl_FragColor * texture2D( texture, gl_PointCoord );
+			if(r > 1000.0)
+				discard;
+		}
+	</script>
+
+	<script src="js/three.min.js"></script>
+	<script src="js/Detector.js"></script>
+	<script src="js/stats.min.js"></script>
+	<script src="js/mobile.js"></script>
+	<script src="js/THREEx.KeyboardState.js"></script>
+	<script src="js/THREEx.FullScreen.js"></script>
+	<script src="js/THREEx.WindowResize.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script type='text/javascript' src='js/DAT.GUI.min.js'></script>
+	<script src="js/main.js"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+</body>
+</html>
