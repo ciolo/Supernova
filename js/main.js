@@ -176,6 +176,8 @@ function init() {
 
 	// CONTROLS
 	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	controls.minDistance = 200;
+	controls.maxDistance = 3000;
 
     if (mobile()) {
         controls.target = lookingPosition;
@@ -202,6 +204,7 @@ function init() {
 	sphereBox.scale.x = -1;
 	sphereBox.doubleSided = true;
 	scene.add( sphereBox );
+
 
 	// STAR
 	// texture base per mesh
@@ -233,7 +236,6 @@ function init() {
 	// grandezza del displacement
 	var bumpScale   = 15.0;
 
-	// con this si hanno oggetti globali
 	this.starUniforms = {
 		baseTexture: 	{ type: "t", value: lavaTexture },
 		baseSpeed:		{ type: "f", value: baseSpeed },
@@ -361,7 +363,6 @@ function animate()
 
 function update()
 {
-
 	if(going) {
 
 		if(!explosion) {
@@ -439,8 +440,8 @@ function update()
 
 	starGlow.material.uniforms.viewVector.value = new THREE.Vector3().subVectors( camera.position, starGlow.position );
 	
-	controls.update();
 	stats.update();
+	controls.update();
     
 }
 
