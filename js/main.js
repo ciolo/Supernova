@@ -142,10 +142,8 @@ function init() {
 	
 
 	// RENDERER
-	if ( Detector.webgl )
-		renderer = new THREE.WebGLRenderer( {antialias:true} );
-	else
-		renderer = new THREE.CanvasRenderer(); 
+	renderer = new THREE.WebGLRenderer( {antialias:true} );
+
 	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	container = document.getElementById('WebGL');
 	container.appendChild( renderer.domElement );
@@ -331,7 +329,6 @@ function init() {
 	particleSystem.sizeAttenuation = false;
 	particleSystem.sortParticles = true;
 	particleSystem.rotation.z = 23.439281 * Math.PI / 180;
-	//scene.add( particleSystem );
 
 }
 
